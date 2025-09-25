@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model NewsSource {
+  id          String   @id @default(cuid())
+  name        String
+  url         String   @unique
+  rssUrl      String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles NewsArticle[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles NewsArticle[]
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles NewsTag[]
+}
+
+model NewsArticle {
+  id           String   @id @default(cuid())
+  title        String
+  content      String
+  summary      String?
+  url          String   @unique
+  imageUrl     String?
+  publishedAt  DateTime
+  fetchedAt    DateTime @default(now())
+  isFeatured   Boolean  @default(false)
+  isProcessed  Boolean  @default(false)
+  language     String   @default("en") // en, ar, etc.
+  views        Int      @default(0)
+  
+  sourceId     String
+  categoryId   String?
+  
+  source       NewsSource @relation(fields: [sourceId], references: [id])
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  tags         NewsTag[]
+  arabicSummary NewsSummary?
+  insights     ContextualInsight[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model NewsSummary {
+  id           String   @id @default(cuid())
+  title        String
+  content      String
+  keyPoints    String?  // JSON array of key points
+  language     String   @default("ar")
+  confidence   Float?   // AI confidence score
+  wordCount    Int      @default(0)
+  
+  articleId    String   @unique
+  
+  article      NewsArticle @relation(fields: [articleId], references: [id])
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model NewsTag {
+  id        String @id @default(cuid())
+  articleId String
+  tagId     String
+  
+  article   NewsArticle @relation(fields: [articleId], references: [id])
+  tag       Tag         @relation(fields: [tagId], references: [id])
+  
+  @@unique([articleId, tagId])
+}
+
+model ProcessingLog {
+  id          String   @id @default(cuid())
+  action      String   // fetch, translate, summarize, categorize, tag
+  status      String   // success, error, pending
+  message     String?
+  metadata    String?  // JSON
+  createdAt   DateTime @default(now())
+}
+
+model UserPreferences {
+  id            String   @id @default(cuid())
+  userId        String?  @unique // For future authentication
+  email         String?  @unique
+  preferredLang String   @default("ar")
+  categories    String?  // JSON array of preferred categories
+  tags          String?  // JSON array of preferred tags
+  sources       String?  // JSON array of preferred sources
+  topics        String?  // JSON array of preferred topics
+  frequency     String   @default("daily") // daily, weekly, monthly
+  isActive      Boolean  @default(true)
+  lastSentAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions TopicSubscription[]
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  keywords    String?  // JSON array of keywords
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions TopicSubscription[]
+}
+
+model TopicSubscription {
+  id            String   @id @default(cuid())
+  userId        String
+  topicId       String
+  
+  user          UserPreferences @relation(fields: [userId], references: [id])
+  topic         Topic           @relation(fields: [topicId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([userId, topicId])
+}
+
+model Newsletter {
+  id          String   @id @default(cuid())
+  subject     String
+  content     String
+  htmlContent String?
+  frequency   String   // daily, weekly, monthly
+  sentAt      DateTime @default(now())
+  recipientCount Int   @default(0)
+  status      String   @default("sent") // sent, failed, pending
+  
+  createdAt   DateTime @default(now())
+}
+
+model ContextualInsight {
+  id          String   @id @default(cuid())
+  articleId   String   @unique
+  title       String
+  content     String
+  type        String   // trend, impact, opportunity, risk
+  confidence  Float?
+  metadata    String?  // JSON
+  
+  article     NewsArticle @relation(fields: [articleId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
