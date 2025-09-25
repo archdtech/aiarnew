@@ -1,7 +1,7 @@
 {
-  "name": "arabic-tech-news-summarizer",
+  "name": "ai-arabic-news",
   "version": "2.0.0",
-  "description": "An advanced AI-powered Arabic Tech News Summarizer platform designed specifically for technology professionals and decision makers in the Arabic-speaking world.",
+  "description": "AI-Driven Tech News Summarizer for Arabic-speaking technology professionals and decision makers. Currently in MVP stage with production-ready features.",
   "private": true,
   "scripts": {
     "dev": "next dev 2>&1 | tee dev.log",
